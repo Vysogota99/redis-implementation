@@ -1,0 +1,18 @@
+version: "3"
+services: 
+  backend:
+    build: ../build/go
+    ports: 
+      - "3000:3000"
+    volumes: 
+      - "../:/go/src/app"
+      - "../build/pkg/:/go/pkg"
+    tty: true
+  
+  redis:
+    image: redis:6.0.9-buster
+    volumes: 
+      - "../build/redis/etc/redis.conf:/usr/local/etc/redis/redis.conf"
+      - "../build/redis/data:/data"
+    ports: 
+      - "6379:6379"
