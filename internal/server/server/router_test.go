@@ -91,3 +91,17 @@ func TestGetHashHandler(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/hash/get?key=%s", ts.URL, key))
 	assert.Equal(t, 200, resp.StatusCode)
 }
+
+func TestGetListHandler(t *testing.T) {
+	redis, err := store.New("localhost:6379")
+	assert.NoError(t, err)
+
+	router := newRouter(":3000", redis)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	key := "tresh"
+	resp, err := http.Get(fmt.Sprintf("%s/list/get?key=%s", ts.URL, key))
+	assert.Equal(t, 200, resp.StatusCode)
+}

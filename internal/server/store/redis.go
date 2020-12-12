@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/Vysogota99/redis-implementation/internal/server/models"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -54,20 +56,45 @@ func (r *Redis) SetString(ctx context.Context, key, value string, ttl int) (stri
 func (r *Redis) SetList(ctx context.Context, key string, value []interface{}, ttl int) (int64, error) {
 	strSlice := make([]string, len(value))
 	for i, val := range value {
+		element := models.ListElement{}
 		switch val.(type) {
 		case float64:
-			strSlice[i] = fmt.Sprintf("%f", val.(float64))
+			element.Dtype = "float64"
+			element.Data = fmt.Sprintf("%f", val.(float64))
+			serialized, err := json.Marshal(element)
+			if err != nil {
+				return 0, err
+			}
+			strSlice[i] = string(serialized)
 		case int64:
-			strSlice[i] = fmt.Sprintf("%d", val.(int64))
+			element.Dtype = "int64"
+			element.Data = fmt.Sprintf("%d", val.(int64))
+			serialized, err := json.Marshal(element)
+			if err != nil {
+				return 0, err
+			}
+			strSlice[i] = string(serialized)
 		case map[string]interface{}:
-			serializedValue, err := json.Marshal(val)
+			serializedData, err := json.Marshal(val)
 			if err != nil {
 				return 0, err
 			}
 
-			strSlice[i] = string(serializedValue)
+			element.Dtype = "map"
+			element.Data = string(serializedData)
+			serialized, err := json.Marshal(element)
+			if err != nil {
+				return 0, err
+			}
+			strSlice[i] = string(serialized)
 		default:
-			strSlice[i] = val.(string)
+			element.Dtype = "string"
+			element.Data = val.(string)
+			serialized, err := json.Marshal(element)
+			if err != nil {
+				return 0, err
+			}
+			strSlice[i] = string(serialized)
 		}
 	}
 
@@ -100,13 +127,47 @@ func (r *Redis) GetString(ctx context.Context, key string) (string, error) {
 }
 
 // GetList ...
-func (r *Redis) GetList(ctx context.Context, key string) ([]string, error) {
+func (r *Redis) GetList(ctx context.Context, key string) ([]interface{}, error) {
 	res, err := r.client.LRange(ctx, key, 0, -1).Result()
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	resultSlice := make([]interface{}, len(res))
+	for i, el := range res {
+		var lElement models.ListElement
+		if err := json.Unmarshal([]byte(el), &lElement); err != nil {
+			return nil, err
+		}
+
+		switch lElement.Dtype {
+		case "float64":
+			floatVal, err := strconv.ParseFloat(lElement.Data, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			resultSlice[i] = floatVal
+		case "int64":
+			intVal, err := strconv.ParseInt(lElement.Data, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			resultSlice[i] = intVal
+		case "string":
+			resultSlice[i] = lElement.Data
+		case "map":
+			var deserializedValue interface{}
+			if err := json.Unmarshal([]byte(lElement.Data), &deserializedValue); err != nil {
+				return nil, err
+			}
+
+			resultSlice[i] = deserializedValue
+		}
+	}
+
+	return resultSlice, nil
 }
 
 // Getkeys ...
@@ -127,4 +188,4 @@ func (r *Redis) Delete(ctx context.Context, key string) (int64, error) {
 	}
 
 	return res, nil
-} 
+}
