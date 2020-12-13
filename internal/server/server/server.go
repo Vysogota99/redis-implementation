@@ -2,13 +2,17 @@ package server
 
 import (
 	"github.com/Vysogota99/redis-implementation/internal/server/store"
+	"github.com/gorilla/sessions"
+
+	"gopkg.in/boj/redistore.v1"
 )
 
 // Server ...
 type Server struct {
-	conf   *Config
-	router *router
-	redis  *store.Redis
+	conf         *Config
+	router       *router
+	redis        *store.Redis
+	sessionStore sessions.Store
 }
 
 // NewServer - helper to init server
@@ -27,8 +31,22 @@ func (s *Server) Start() error {
 
 	s.redis = redis
 
-	s.router = newRouter(s.conf.serverPort, s.redis)
+	if err := s.initSessionStore(); err != nil {
+		return err
+	}
+
+	s.router = newRouter(s.conf.serverPort, s.conf.sessionName, s.redis, s.sessionStore)
 	s.router.setup().Run(s.conf.serverPort)
 
+	return nil
+}
+
+func (s *Server) initSessionStore() error {
+	store, err := redistore.NewRediStore(s.conf.sessionMaxNumberIDLEConnections, "tcp", s.conf.redisAddr, "", []byte(s.conf.sessionKey))
+	if err != nil {
+		return err
+	}
+
+	s.sessionStore = store
 	return nil
 }

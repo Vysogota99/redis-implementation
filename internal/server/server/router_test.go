@@ -15,7 +15,7 @@ import (
 
 func TestSetlistHandler(t *testing.T) {
 	redis, _ := store.New("localhost:6379")
-	router := newRouter(":3000", redis)
+	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
@@ -38,7 +38,7 @@ func TestSetlistHandler(t *testing.T) {
 
 func TestSetHashHandler(t *testing.T) {
 	redis, _ := store.New("localhost:6379")
-	router := newRouter(":3000", redis)
+	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
@@ -63,7 +63,7 @@ func TestSetStringHandler(t *testing.T) {
 	redis, err := store.New("localhost:6379")
 	assert.NoError(t, err)
 
-	router := newRouter(":3000", redis)
+	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
@@ -85,7 +85,7 @@ func TestGetHashHandler(t *testing.T) {
 	redis, err := store.New("localhost:6379")
 	assert.NoError(t, err)
 
-	router := newRouter(":3000", redis)
+	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
@@ -100,13 +100,35 @@ func TestGetListHandler(t *testing.T) {
 	redis, err := store.New("localhost:6379")
 	assert.NoError(t, err)
 
-	router := newRouter(":3000", redis)
+	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
 
 	key := "tresh"
 	resp, err := http.Get(fmt.Sprintf("%s/list/get?key=%s", ts.URL, key))
+	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestSignUP(t *testing.T) {
+	redis, err := store.New("localhost:6379")
+	assert.NoError(t, err)
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	reqBody := models.User{
+		Login:    "ivan",
+		Password: "qwerty",
+	}
+
+	data, err := json.Marshal(reqBody)
+	assert.NoError(t, err)
+
+	resp, err := http.Post(fmt.Sprintf("%s/signup", ts.URL), "application/json", bytes.NewBuffer(data))
 	assert.Equal(t, 200, resp.StatusCode)
 	resp.Body.Close()
 }

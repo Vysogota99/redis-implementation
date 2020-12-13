@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -51,5 +52,38 @@ func (r *router) keyToStringMiddleware() gin.HandlerFunc {
 
 			c <- keyString
 		}(cCp, keyChan)
+	}
+}
+
+// AuthUserMiddleware - ...
+func (r *router) AuthUserMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session, err := r.sessionStore.Get(c.Request, r.sessionName)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"err":     err.Error(),
+				"meesage": "",
+			})
+			return
+		}
+
+		login, ok := session.Values["user_login"]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"meesage": "Пользователь не авторизован",
+			})
+			return
+		}
+
+		userKey := fmt.Sprintf("user:%s", login)
+		user, err := r.redis.GetHash(context.Background(), userKey)
+		if len(user) == 0 {
+			c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("Пользователь не найден"))
+			return
+		}
+
+		c.Set("user", user)
+		c.Next()
+
 	}
 }

@@ -3,21 +3,26 @@ package server
 import (
 	"github.com/Vysogota99/redis-implementation/internal/server/store"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 )
 
 // router ...
 type router struct {
-	router     *gin.Engine
-	serverPort string
-	redis      *store.Redis
+	router       *gin.Engine
+	serverPort   string
+	redis        *store.Redis
+	sessionName  string
+	sessionStore sessions.Store
 }
 
 // newRouter - helper for initialization http
-func newRouter(serverPort string, redis *store.Redis) *router {
+func newRouter(serverPort, sessionName string, redis *store.Redis, sessionStore sessions.Store) *router {
 	return &router{
-		router:     gin.Default(),
-		serverPort: serverPort,
-		redis:      redis,
+		router:       gin.Default(),
+		serverPort:   serverPort,
+		redis:        redis,
+		sessionName:  sessionName,
+		sessionStore: sessionStore,
 	}
 }
 
@@ -43,5 +48,10 @@ func (r *router) setup() *gin.Engine {
 
 	r.router.GET("/keys", r.keysHandler)
 	r.router.POST("/del", r.keyToStringMiddleware(), r.deleteHandler)
+
+	r.router.POST("/login", r.LoginHadler)
+	r.router.POST("/signup", r.SignupHandler)
+	r.router.POST("/logout", r.AuthUserMiddleware(), r.LogoutHandler)
+
 	return r.router
 }

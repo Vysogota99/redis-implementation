@@ -26,3 +26,9 @@ type ListElement struct {
 	Dtype string
 	Data  string
 }
+
+// User ...
+type User struct {
+	Login    string `json:"login" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}

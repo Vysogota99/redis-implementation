@@ -3,12 +3,16 @@ package server
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 // Config ...
 type Config struct {
-	serverPort string
-	redisAddr  string
+	serverPort                      string
+	redisAddr                       string
+	sessionKey                      string
+	sessionMaxNumberIDLEConnections int
+	sessionName                     string
 }
 
 // NewConfig - helper to init config
@@ -23,8 +27,25 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("No REDIS_ADDR in .env")
 	}
 
+	sessionKey, exists := os.LookupEnv("SESSION_KEY")
+	if !exists {
+		return nil, fmt.Errorf("No SESSION_KEY in .env")
+	}
+
+	maxIDLEconn, exists := os.LookupEnv("MAX_IDLE_SESSION_CONN")
+	if !exists {
+		return nil, fmt.Errorf("No MAX_IDLE_SESSION_CONN in .env")
+	}
+	imaxIDLEconn, err := strconv.Atoi(maxIDLEconn)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
-		serverPort: serverPort,
-		redisAddr:  redisAddr,
+		serverPort:                      serverPort,
+		redisAddr:                       redisAddr,
+		sessionMaxNumberIDLEConnections: imaxIDLEconn,
+		sessionKey:                      sessionKey,
+		sessionName:                     "auth",
 	}, nil
 }
