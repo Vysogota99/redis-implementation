@@ -23,14 +23,14 @@ func (r *router) setHashHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := r.redis.SetHash(c, key, data.Value, data.TTL)
+	err := r.redis.SetHash(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	respond(c, http.StatusOK, result, "")
+	respond(c, http.StatusOK, "success", "")
 }
 
 func (r *router) setStringHandler(c *gin.Context) {
@@ -70,14 +70,14 @@ func (r *router) setListHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := r.redis.SetList(c, key, data.Value, data.TTL)
+	err := r.redis.SetList(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	respond(c, http.StatusOK, result, "")
+	respond(c, http.StatusOK, "success", "")
 }
 
 func (r *router) getHashHandler(c *gin.Context) {

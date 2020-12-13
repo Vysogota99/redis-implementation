@@ -33,19 +33,28 @@ func New(addr string) (*Redis, error) {
 }
 
 // SetHash ...
-func (r *Redis) SetHash(ctx context.Context, key string, value map[string]interface{}, ttl int) (bool, error) {
-	result, err := r.client.HMSet(ctx, key, value).Result()
-	if err != nil {
-		return false, err
+func (r *Redis) SetHash(ctx context.Context, key string, value map[string]interface{}, ttl int) error {
+	txf := func(tx *redis.Tx) error {
+		_, err := r.client.HMSet(ctx, key, value).Result()
+		if err != nil {
+			return err
+		}
+
+		if ttl != 0 {
+			_, err = r.client.Expire(ctx, key, time.Duration(ttl)*time.Minute).Result()
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
-	if ttl != 0 {
-		_, err = r.client.Expire(ctx, key, time.Duration(ttl)*time.Minute).Result()
-		if err != nil {
-			return false, err
-		}
+	err := r.client.Watch(ctx, txf)
+	if err != nil {
+		return err
 	}
-	return result, nil
+	return nil
 }
 
 // SetString ...
@@ -59,64 +68,72 @@ func (r *Redis) SetString(ctx context.Context, key, value string, ttl int) (stri
 }
 
 // SetList ...
-func (r *Redis) SetList(ctx context.Context, key string, value []interface{}, ttl int) (int64, error) {
-	strSlice := make([]string, len(value))
-	for i, val := range value {
-		element := models.ListElement{}
-		switch val.(type) {
-		case float64:
-			element.Dtype = "float64"
-			element.Data = fmt.Sprintf("%f", val.(float64))
-			serialized, err := json.Marshal(element)
-			if err != nil {
-				return 0, err
-			}
-			strSlice[i] = string(serialized)
-		case int64:
-			element.Dtype = "int64"
-			element.Data = fmt.Sprintf("%d", val.(int64))
-			serialized, err := json.Marshal(element)
-			if err != nil {
-				return 0, err
-			}
-			strSlice[i] = string(serialized)
-		case map[string]interface{}:
-			serializedData, err := json.Marshal(val)
-			if err != nil {
-				return 0, err
-			}
+func (r *Redis) SetList(ctx context.Context, key string, value []interface{}, ttl int) error {
+	txf := func(tx *redis.Tx) error {
+		strSlice := make([]string, len(value))
+		for i, val := range value {
+			element := models.ListElement{}
+			switch val.(type) {
+			case float64:
+				element.Dtype = "float64"
+				element.Data = fmt.Sprintf("%f", val.(float64))
+				serialized, err := json.Marshal(element)
+				if err != nil {
+					return err
+				}
+				strSlice[i] = string(serialized)
+			case int64:
+				element.Dtype = "int64"
+				element.Data = fmt.Sprintf("%d", val.(int64))
+				serialized, err := json.Marshal(element)
+				if err != nil {
+					return err
+				}
+				strSlice[i] = string(serialized)
+			case map[string]interface{}:
+				serializedData, err := json.Marshal(val)
+				if err != nil {
+					return err
+				}
 
-			element.Dtype = "map"
-			element.Data = string(serializedData)
-			serialized, err := json.Marshal(element)
-			if err != nil {
-				return 0, err
+				element.Dtype = "map"
+				element.Data = string(serializedData)
+				serialized, err := json.Marshal(element)
+				if err != nil {
+					return err
+				}
+				strSlice[i] = string(serialized)
+			default:
+				element.Dtype = "string"
+				element.Data = val.(string)
+				serialized, err := json.Marshal(element)
+				if err != nil {
+					return err
+				}
+				strSlice[i] = string(serialized)
 			}
-			strSlice[i] = string(serialized)
-		default:
-			element.Dtype = "string"
-			element.Data = val.(string)
-			serialized, err := json.Marshal(element)
-			if err != nil {
-				return 0, err
-			}
-			strSlice[i] = string(serialized)
 		}
-	}
 
-	result, err := r.client.RPush(ctx, key, strSlice).Result()
-	if err != nil {
-		return 0, err
-	}
-
-	if ttl != 0 {
-		_, err = r.client.Expire(ctx, key, time.Duration(ttl)*time.Minute).Result()
+		_, err := r.client.RPush(ctx, key, strSlice).Result()
 		if err != nil {
-			return 0, err
+			return err
 		}
+
+		if ttl != 0 {
+			_, err = r.client.Expire(ctx, key, time.Duration(ttl)*time.Minute).Result()
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
-	return result, nil
+	err := r.client.Watch(ctx, txf)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetHash ...
