@@ -4,6 +4,7 @@ services:
     build: ../build/go
     ports: 
       - "3000:3000"
+      - "3001:3001"
     volumes: 
       - "../:/go/src/app"
       - "../build/pkg/:/go/pkg"

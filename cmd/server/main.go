@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Vysogota99/redis-implementation/internal/server/server"
-	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 )
 
@@ -14,13 +12,6 @@ func init() {
 	if err := godotenv.Load(); err != nil {
 		panic(fmt.Errorf("Error could not find .env file: %w", err))
 	}
-}
-
-var redisClient *redis.Client
-
-func rPush(key string, valueList []string) (bool, error) {
-	err := redisClient.RPush(context.Background(), key, valueList).Err()
-	return true, err
 }
 
 func main() {
