@@ -39,6 +39,12 @@ func (r *Redis) SetHash(ctx context.Context, key string, value map[string]interf
 		return false, err
 	}
 
+	if ttl != 0 {
+		_, err = r.client.Expire(ctx, key, time.Duration(ttl)*time.Minute).Result()
+		if err != nil {
+			return false, err
+		}
+	}
 	return result, nil
 }
 
@@ -101,6 +107,13 @@ func (r *Redis) SetList(ctx context.Context, key string, value []interface{}, tt
 	result, err := r.client.RPush(ctx, key, strSlice).Result()
 	if err != nil {
 		return 0, err
+	}
+
+	if ttl != 0 {
+		_, err = r.client.Expire(ctx, key, time.Duration(ttl)*time.Minute).Result()
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	return result, nil

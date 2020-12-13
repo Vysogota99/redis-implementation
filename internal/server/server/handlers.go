@@ -10,13 +10,20 @@ import (
 )
 
 func (r *router) setHashHandler(c *gin.Context) {
+	keyChan, exists := c.Get("key")
+	if !exists {
+		respond(c, http.StatusInternalServerError, nil, "No key chan in context")
+		return
+	}
+	key := <-keyChan.(chan string)
+
 	data := &models.SetHashRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
 		respond(c, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
-	result, err := r.redis.SetHash(c, data.Key, data.Value, data.TTL)
+	result, err := r.redis.SetHash(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, nil, err.Error())
@@ -27,13 +34,20 @@ func (r *router) setHashHandler(c *gin.Context) {
 }
 
 func (r *router) setStringHandler(c *gin.Context) {
+	keyChan, exists := c.Get("key")
+	if !exists {
+		respond(c, http.StatusInternalServerError, nil, "No key chan in context")
+		return
+	}
+	key := <-keyChan.(chan string)
+
 	data := &models.SetStringRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
 		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
 		return
 	}
 
-	result, err := r.redis.SetString(c, data.Key, data.Value, data.TTL)
+	result, err := r.redis.SetString(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, nil, err.Error())
@@ -43,13 +57,20 @@ func (r *router) setStringHandler(c *gin.Context) {
 }
 
 func (r *router) setListHandler(c *gin.Context) {
+	keyChan, exists := c.Get("key")
+	if !exists {
+		respond(c, http.StatusInternalServerError, nil, "No key chan in context")
+		return
+	}
+	key := <-keyChan.(chan string)
+
 	data := &models.SetListRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
 		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
 		return
 	}
 
-	result, err := r.redis.SetList(c, data.Key, data.Value, data.TTL)
+	result, err := r.redis.SetList(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, nil, err.Error())

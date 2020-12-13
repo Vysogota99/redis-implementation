@@ -25,19 +25,19 @@ func newRouter(serverPort string, redis *store.Redis) *router {
 func (r *router) setup() *gin.Engine {
 	list := r.router.Group("/list")
 	{
-		list.POST("/set", r.setListHandler)
+		list.POST("/set", r.keyToStringMiddleware(), r.setListHandler)
 		list.GET("/get", r.getListHandler)
 	}
 
 	str := r.router.Group("/string")
 	{
-		str.POST("/set", r.setStringHandler)
+		str.POST("/set", r.keyToStringMiddleware(), r.setStringHandler)
 		str.GET("/get", r.getStringHandler)
 	}
 
 	hash := r.router.Group("/hash")
 	{
-		hash.POST("/set", r.setHashHandler)
+		hash.POST("/set", r.keyToStringMiddleware(), r.setHashHandler)
 		hash.GET("/get", r.getHashHandler)
 	}
 
