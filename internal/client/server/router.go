@@ -18,6 +18,11 @@ func newRouter(serverPort string) *router {
 
 // Setup - найстройка роутера
 func (r *router) setup() *gin.Engine {
+	r.router.POST("/list", r.ListHandler)
+	r.router.POST("/string", r.StringHandler)
+	r.router.POST("/map", r.MapHandler)
+	r.router.GET("/keys", r.GetKeys)
+	r.router.POST("/delete", r.DelKey)
 
 	return r.router
 }

@@ -33,6 +33,7 @@ func TestSetlistHandler(t *testing.T) {
 
 	resp, err := http.Post(fmt.Sprintf("%s/list/set", ts.URL), "application/json", bytes.NewBuffer(data))
 	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestSetHashHandler(t *testing.T) {
@@ -55,6 +56,7 @@ func TestSetHashHandler(t *testing.T) {
 
 	resp, err := http.Post(fmt.Sprintf("%s/hash/set", ts.URL), "application/json", bytes.NewBuffer(data))
 	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestSetStringHandler(t *testing.T) {
@@ -76,6 +78,7 @@ func TestSetStringHandler(t *testing.T) {
 
 	resp, err := http.Post(fmt.Sprintf("%s/string/set", ts.URL), "application/json", bytes.NewBuffer(data))
 	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestGetHashHandler(t *testing.T) {
@@ -90,6 +93,7 @@ func TestGetHashHandler(t *testing.T) {
 	key := "user:ivan"
 	resp, err := http.Get(fmt.Sprintf("%s/hash/get?key=%s", ts.URL, key))
 	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
 }
 
 func TestGetListHandler(t *testing.T) {
@@ -104,4 +108,5 @@ func TestGetListHandler(t *testing.T) {
 	key := "tresh"
 	resp, err := http.Get(fmt.Sprintf("%s/list/get?key=%s", ts.URL, key))
 	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
 }

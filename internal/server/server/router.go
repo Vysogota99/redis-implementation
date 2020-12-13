@@ -42,6 +42,6 @@ func (r *router) setup() *gin.Engine {
 	}
 
 	r.router.GET("/keys", r.keysHandler)
-	r.router.DELETE("/del", r.deleteHandler)
+	r.router.POST("/del", r.keyToStringMiddleware(), r.deleteHandler)
 	return r.router
 }

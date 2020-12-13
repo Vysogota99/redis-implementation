@@ -12,21 +12,21 @@ import (
 func (r *router) setHashHandler(c *gin.Context) {
 	keyChan, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, nil, "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key chan in context")
 		return
 	}
 	key := <-keyChan.(chan string)
 
 	data := &models.SetHashRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		respond(c, http.StatusBadRequest, nil, err.Error())
+		respond(c, http.StatusBadRequest, "", err.Error())
 		return
 	}
 
 	err := r.redis.SetHash(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 
@@ -36,21 +36,21 @@ func (r *router) setHashHandler(c *gin.Context) {
 func (r *router) setStringHandler(c *gin.Context) {
 	keyChan, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, nil, "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key chan in context")
 		return
 	}
 	key := <-keyChan.(chan string)
 
 	data := &models.SetStringRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		respond(c, http.StatusUnprocessableEntity, "", err.Error())
 		return
 	}
 
 	result, err := r.redis.SetString(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 	respond(c, http.StatusOK, result, "")
@@ -59,21 +59,21 @@ func (r *router) setStringHandler(c *gin.Context) {
 func (r *router) setListHandler(c *gin.Context) {
 	keyChan, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, nil, "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key chan in context")
 		return
 	}
 	key := <-keyChan.(chan string)
 
 	data := &models.SetListRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
-		respond(c, http.StatusUnprocessableEntity, nil, err.Error())
+		respond(c, http.StatusUnprocessableEntity, "", err.Error())
 		return
 	}
 
 	err := r.redis.SetList(c, key, data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 
@@ -83,17 +83,17 @@ func (r *router) setListHandler(c *gin.Context) {
 func (r *router) getHashHandler(c *gin.Context) {
 	key := c.Query("key")
 	if key == "" {
-		respond(c, http.StatusBadRequest, nil, "No field key in get query")
+		respond(c, http.StatusBadRequest, "", "No field key in get query")
 	}
 
 	result, err := r.redis.GetHash(c, key)
 	if err != nil {
 		if err == redis.Nil {
-			respond(c, http.StatusNoContent, nil, err.Error())
+			respond(c, http.StatusNoContent, "", err.Error())
 			return
 		}
 
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 
@@ -103,17 +103,17 @@ func (r *router) getHashHandler(c *gin.Context) {
 func (r *router) getStringHandler(c *gin.Context) {
 	key := c.Query("key")
 	if key == "" {
-		respond(c, http.StatusBadRequest, nil, "No field key in get query")
+		respond(c, http.StatusBadRequest, "", "No field key in get query")
 	}
 
 	result, err := r.redis.GetString(c, key)
 	if err != nil {
 		if err == redis.Nil {
-			respond(c, http.StatusNoContent, nil, err.Error())
+			respond(c, http.StatusNoContent, "", err.Error())
 			return
 		}
 
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 
@@ -123,16 +123,16 @@ func (r *router) getStringHandler(c *gin.Context) {
 func (r *router) keysHandler(c *gin.Context) {
 	pattern := c.Query("pattern")
 	if pattern == "" {
-		respond(c, http.StatusBadRequest, nil, "No field pattern in get query")
+		respond(c, http.StatusBadRequest, "", "No field pattern in get query")
 	}
 	result, err := r.redis.Getkeys(c, pattern)
 	if err != nil {
 		if err == redis.Nil {
-			respond(c, http.StatusNoContent, nil, err.Error())
+			respond(c, http.StatusNoContent, "", err.Error())
 			return
 		}
 
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 	}
 
 	respond(c, http.StatusOK, result, "")
@@ -141,17 +141,18 @@ func (r *router) keysHandler(c *gin.Context) {
 func (r *router) getListHandler(c *gin.Context) {
 	key := c.Query("key")
 	if key == "" {
-		respond(c, http.StatusBadRequest, nil, "No field key in get query")
+		respond(c, http.StatusBadRequest, "", "No field key in get query")
+		return
 	}
 
 	result, err := r.redis.GetList(c, key)
 	if err != nil {
 		if err == redis.Nil {
-			respond(c, http.StatusNoContent, nil, err.Error())
+			respond(c, http.StatusNoContent, "", err.Error())
 			return
 		}
 
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 
@@ -159,19 +160,21 @@ func (r *router) getListHandler(c *gin.Context) {
 }
 
 func (r *router) deleteHandler(c *gin.Context) {
-	key := c.Query("key")
-	if key == "" {
-		respond(c, http.StatusBadRequest, nil, "No field key in get query")
+	keyChan, exists := c.Get("key")
+	if !exists {
+		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		return
 	}
+	key := <-keyChan.(chan string)
 
 	result, err := r.redis.Delete(c, key)
 	if err != nil {
 		if err == redis.Nil {
-			respond(c, http.StatusNoContent, nil, err.Error())
+			respond(c, http.StatusNoContent, "", err.Error())
 			return
 		}
 
-		respond(c, http.StatusInternalServerError, nil, err.Error())
+		respond(c, http.StatusInternalServerError, "", err.Error())
 		return
 	}
 
