@@ -62,78 +62,123 @@
         <br>
     </li>
 </ul>
+<h3>
+    Api методы для сервера
+</h3>
 <ul>
     <li>
-        создание списка
+        создание списка RPUSH
         <br>
         <code>
-        curl -X POST
-        -d '{"key":"asd"{"key":"list:1", "value":["ivan", 1, 3.2]}' http://127.0.0.1:3000/list/set
+            curl -X POST
+            -d '{"key":"asd"{"key":"list:1", "value":["ivan", 1, 3.2]}'
+        </code>
+        <br>
+        результат
+        <br>
+        <code>
+            http://127.0.0.1:3000/list/set
         </code>
     </li>
     <li>
-            получение списка
-        <br>
-        <code>
-        curl -X GET
-        http://127.0.0.1:3000/list/get?key=list:1
-        {"error":"","result":["ivan",1,3.2]}
-        </code>
-    </li>
-    <li>
-            lrange
+            получение списка LRANGE
         <br>
         <code>
             curl -X GET
-             http://127.0.0.1:3000/list/lrange?key=list:1&start=0&stop=-1
+            http://127.0.0.1:3000/list/get?key=list:1
+        </code>
+        <br>
+        результат
+        <br>
+        <code>
+            {"error":"","result":["ivan",1,3.2]}
         </code>
     </li>
-        <li>
-            добавить строку 
+    <li>
+            добавить строку SET
         <br>
         <code>
             curl -X POST
              -d '{"key":"user:1", "value":"string"}' http://127.0.0.1:3000/string/set
+        </code>
+        <br>
+        результат
+        <br>
+        <code>
             {"error":"","result":"OK"}
         </code>
     </li>
         <li>
-        получить строку по значению
+        получить строку по значению GET
         <br>
         <code>
-        curl -X GET http://127.0.0.1:3000/string/get?key="user:1"        
-        {"error":"","result":"string"}
+            curl -X GET
+            http://127.0.0.1:3000/string/get?key="user:1"  
+        </code>
+        <br>
+        результат
+        <br>
+        <code>    
+            {"error":"","result":"string"}
+        </code>
+=
+    <li>
+        получить значение поля hash HGET
+        <br>
+        <code>
+        curl -X GET http://127.0.0.1:3000/hash/hget?key=user:Ivan&field=password
+        </code>
+        <br>
+        результат
+        <br>
+        <code>
+        {"error":"",result":"$2a$08$BN5DyPquIrPhAnTQNxtrEOAXxMZgPAzQdNYJydpgMXGuRBy6tRP76"}
         </code>
     </li>
-        <li>
-            добавить hash
+    <li>
+        получить значение поля hash HGetAll
         <br>
         <code>
-            
+        curl -X GET 127.0.0.1:3000/hash/get?key=user:Ivan  
+        <code>
+        <br>
+        результат
+        <br>
+        </code>
+        {"error":"","result":{"lastname":"Lapshin","login":"Ivan","password":"$2a$08$BN5DyPquIrPhAnTQNxtrEOAXxMZgPAzQdNYJydpgMXGuRBy6tRP76","role":"user"}}
         </code>
     </li>
-    </li>
-        <li>
-
+    <li>
+        список ключей KEYS
         <br>
         <code>
-
+            curl -X GET http://127.0.0.1:3000/keys?pattern=*                        
+        </code>
+        <br>
+        результат
+        <br>
+        <code>
+            {"error":"","result":["Ivan","user:ivan","list:1","{\"name\":\"Ivan\",\"sex\":\"male\"}","user:Ivan","key","user:1","user:Ivan2","user:2","user:3"]}
         </code>
     </li>
-    </li>
-        <li>
-
+    <li>
+        удалить ключ DEL
         <br>
         <code>
-
+        curl -X POST -d '{"key":"user:1"}' 127.0.0.1:3000/del
         </code>
     </li>
-    </li>
-        <li>
-
+    <li>
+        сохранить данные на диск SAVE
         <br>
         <code>
-
+        curl -X POST  127.0.0.1:3000/save
+        </code>
+        <br>
+        результат
+        <br>
+        <code>
+        {"error":"","result":"Файл dump.rdb в папке [project name]/build/redis/data"}
         </code>
     </li>
 </ul>
