@@ -62,3 +62,12 @@
         <br>
     </li>
 </ul>
+<ul>
+    <li>
+        создание списка
+        <code>
+        curl -X POST
+        -d '{"key":"asd"{"key":"list:1", "value":["ivan", 1, 3.2]}' http://127.0.0.1:3000/list/set
+        </code>
+    </li>
+</ul>
