@@ -65,9 +65,75 @@
 <ul>
     <li>
         создание списка
+        <br>
         <code>
         curl -X POST
         -d '{"key":"asd"{"key":"list:1", "value":["ivan", 1, 3.2]}' http://127.0.0.1:3000/list/set
+        </code>
+    </li>
+    <li>
+            получение списка
+        <br>
+        <code>
+        curl -X GET
+        http://127.0.0.1:3000/list/get?key=list:1
+        {"error":"","result":["ivan",1,3.2]}
+        </code>
+    </li>
+    <li>
+            lrange
+        <br>
+        <code>
+            curl -X GET
+             http://127.0.0.1:3000/list/lrange?key=list:1&start=0&stop=-1
+        </code>
+    </li>
+        <li>
+            добавить строку 
+        <br>
+        <code>
+            curl -X POST
+             -d '{"key":"user:1", "value":"string"}' http://127.0.0.1:3000/string/set
+            {"error":"","result":"OK"}
+        </code>
+    </li>
+        <li>
+        получить строку по значению
+        <br>
+        <code>
+        curl -X GET http://127.0.0.1:3000/string/get?key="user:1"        
+        {"error":"","result":"string"}
+        </code>
+    </li>
+        <li>
+            добавить hash
+        <br>
+        <code>
+            
+        </code>
+    </li>
+    </li>
+        <li>
+
+        <br>
+        <code>
+
+        </code>
+    </li>
+    </li>
+        <li>
+
+        <br>
+        <code>
+
+        </code>
+    </li>
+    </li>
+        <li>
+
+        <br>
+        <code>
+
         </code>
     </li>
 </ul>
