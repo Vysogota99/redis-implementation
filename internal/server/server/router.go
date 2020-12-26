@@ -56,6 +56,7 @@ func (r *router) setup() *gin.Engine {
 	r.router.POST("/login", r.loginHadler)
 	r.router.POST("/signup", r.signupHandler)
 	r.router.POST("/logout", r.authUserMiddleware(), r.logoutHandler)
+	r.router.POST("/save", r.saveHandler)
 
 	return r.router
 }

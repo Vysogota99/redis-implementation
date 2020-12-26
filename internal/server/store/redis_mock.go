@@ -29,6 +29,11 @@ func NewMock() *RedisMock {
 	}
 }
 
+// Save ...
+func (r *RedisMock) Save(ctx context.Context) error {
+	return nil
+}
+
 // SetHash ...
 func (r *RedisMock) SetHash(ctx context.Context, key string, value map[string]interface{}, ttl int) error {
 	r.mock.ExpectHMSet(key, value).SetVal(true)

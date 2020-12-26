@@ -13,52 +13,47 @@ import (
 
 func (r *router) keyToStringMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cCp := c.Copy()
-		keyChan := make(chan string)
-		c.Set("key", keyChan)
+		type requestKey struct {
+			Key interface{} `json:"key" binding:"required"`
+		}
+		rk := &requestKey{}
 
-		go func(ctx *gin.Context, c chan string) {
-			type requestKey struct {
-				Key interface{} `json:"key" binding:"required"`
-			}
-			rk := &requestKey{}
+		body, err := ioutil.ReadAll(c.Request.Body)
+		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
 
-			body, err := ioutil.ReadAll(ctx.Request.Body)
-			ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		if err := json.Unmarshal(body, rk); err != nil {
+			c.AbortWithError(http.StatusUnprocessableEntity, err)
+			return
+		}
+
+		if rk.Key == nil {
+			c.AbortWithError(http.StatusUnprocessableEntity, err)
+			return
+		}
+
+		var keyString string
+		switch rk.Key.(type) {
+		case float64:
+			keyString = fmt.Sprintf("%f", rk.Key.(float64))
+		case int64:
+			keyString = fmt.Sprintf("%d", rk.Key.(int64))
+		case map[string]interface{}:
+			serializedData, err := json.Marshal(rk.Key)
 			if err != nil {
-				ctx.AbortWithError(http.StatusInternalServerError, err)
+				c.AbortWithError(http.StatusUnprocessableEntity, err)
 				return
 			}
+			keyString = string(serializedData)
+		default:
+			keyString = rk.Key.(string)
+		}
 
-			if err := json.Unmarshal(body, rk); err != nil {
-				ctx.AbortWithError(http.StatusUnprocessableEntity, err)
-				return
-			}
-
-			if rk.Key == nil {
-				ctx.AbortWithError(http.StatusUnprocessableEntity, err)
-				return
-			}
-
-			var keyString string
-			switch rk.Key.(type) {
-			case float64:
-				keyString = fmt.Sprintf("%f", rk.Key.(float64))
-			case int64:
-				keyString = fmt.Sprintf("%d", rk.Key.(int64))
-			case map[string]interface{}:
-				serializedData, err := json.Marshal(rk.Key)
-				if err != nil {
-					ctx.AbortWithError(http.StatusUnprocessableEntity, err)
-					return
-				}
-				keyString = string(serializedData)
-			default:
-				keyString = rk.Key.(string)
-			}
-
-			c <- keyString
-		}(cCp, keyChan)
+		c.Set("key", keyString)
+		c.Next()
 	}
 }
 

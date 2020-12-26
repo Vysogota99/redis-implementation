@@ -25,6 +25,7 @@ type RedisImpl interface {
 	HSet(ctx context.Context, key string, values map[string]interface{}) (int64, error)
 	LRange(ctx context.Context, key string, start, stop int64) ([]interface{}, error)
 	LSet(ctx context.Context, key string, index int64, value interface{}) (string, error)
+	Save(ctx context.Context) error
 }
 
 // Redis ...
@@ -424,4 +425,14 @@ func (r *Redis) LSet(ctx context.Context, key string, index int64, value interfa
 		return "", nil
 	}
 	return res, nil
+}
+
+// Save redis dump
+func (r *Redis) Save(ctx context.Context) error {
+	_, err := r.client.Save(ctx).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

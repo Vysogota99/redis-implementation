@@ -15,12 +15,11 @@ import (
 )
 
 func (r *router) setHashHandler(c *gin.Context) {
-	keyChan, exists := c.Get("key")
+	key, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key in context")
 		return
 	}
-	key := <-keyChan.(chan string)
 
 	data := &models.SetHashRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
@@ -28,7 +27,7 @@ func (r *router) setHashHandler(c *gin.Context) {
 		return
 	}
 
-	err := r.redis.SetHash(c, key, data.Value, data.TTL)
+	err := r.redis.SetHash(c, key.(string), data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, "", err.Error())
@@ -39,12 +38,11 @@ func (r *router) setHashHandler(c *gin.Context) {
 }
 
 func (r *router) setStringHandler(c *gin.Context) {
-	keyChan, exists := c.Get("key")
+	key, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key in context")
 		return
 	}
-	key := <-keyChan.(chan string)
 
 	data := &models.SetStringRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
@@ -52,7 +50,7 @@ func (r *router) setStringHandler(c *gin.Context) {
 		return
 	}
 
-	result, err := r.redis.SetString(c, key, data.Value, data.TTL)
+	result, err := r.redis.SetString(c, key.(string), data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, "", err.Error())
@@ -62,12 +60,11 @@ func (r *router) setStringHandler(c *gin.Context) {
 }
 
 func (r *router) setListHandler(c *gin.Context) {
-	keyChan, exists := c.Get("key")
+	key, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key in context")
 		return
 	}
-	key := <-keyChan.(chan string)
 
 	data := &models.SetListRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
@@ -75,7 +72,7 @@ func (r *router) setListHandler(c *gin.Context) {
 		return
 	}
 
-	err := r.redis.SetList(c, key, data.Value, data.TTL)
+	err := r.redis.SetList(c, key.(string), data.Value, data.TTL)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, "", err.Error())
@@ -169,14 +166,13 @@ func (r *router) getListHandler(c *gin.Context) {
 }
 
 func (r *router) deleteHandler(c *gin.Context) {
-	keyChan, exists := c.Get("key")
+	key, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key in context")
 		return
 	}
-	key := <-keyChan.(chan string)
 
-	result, err := r.redis.Delete(c, key)
+	result, err := r.redis.Delete(c, key.(string))
 	if err != nil {
 		if err == redis.Nil {
 			respond(c, http.StatusNoContent, "", err.Error())
@@ -304,12 +300,11 @@ func (r *router) hGetHandler(c *gin.Context) {
 }
 
 func (r *router) hSetHandler(c *gin.Context) {
-	keyChan, exists := c.Get("key")
+	key, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key in context")
 		return
 	}
-	key := <-keyChan.(chan string)
 
 	data := &models.SetHashRequest{}
 	if err := c.ShouldBindJSON(data); err != nil {
@@ -317,7 +312,7 @@ func (r *router) hSetHandler(c *gin.Context) {
 		return
 	}
 
-	res, err := r.redis.HSet(c, key, data.Value)
+	res, err := r.redis.HSet(c, key.(string), data.Value)
 	if err != nil {
 		log.Println(err)
 		respond(c, http.StatusInternalServerError, "", err.Error())
@@ -374,12 +369,11 @@ func (r *router) lRangeHandler(c *gin.Context) {
 }
 
 func (r *router) lSetHandler(c *gin.Context) {
-	keyChan, exists := c.Get("key")
+	key, exists := c.Get("key")
 	if !exists {
-		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		respond(c, http.StatusInternalServerError, "", "No key in context")
 		return
 	}
-	key := <-keyChan.(chan string)
 
 	type request struct {
 		key   string
@@ -388,7 +382,7 @@ func (r *router) lSetHandler(c *gin.Context) {
 	}
 
 	req := request{
-		key: key,
+		key: key.(string),
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -408,6 +402,15 @@ func (r *router) lSetHandler(c *gin.Context) {
 	}
 
 	respond(c, http.StatusOK, result, "")
+}
+
+func (r *router) saveHandler(c *gin.Context) {
+	if err := r.redis.Save(context.Background()); err != nil {
+		respond(c, http.StatusInternalServerError, "", err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, "Файл dump.rdb в папке [project name]/build/redis/data", "")
 }
 
 func respond(c *gin.Context, code int, result interface{}, err string) {
