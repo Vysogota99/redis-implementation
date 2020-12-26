@@ -10,13 +10,13 @@ import (
 type router struct {
 	router       *gin.Engine
 	serverPort   string
-	redis        *store.Redis
+	redis        store.RedisImpl
 	sessionName  string
 	sessionStore sessions.Store
 }
 
 // newRouter - helper for initialization http
-func newRouter(serverPort, sessionName string, redis *store.Redis, sessionStore sessions.Store) *router {
+func newRouter(serverPort, sessionName string, redis store.RedisImpl, sessionStore sessions.Store) *router {
 	return &router{
 		router:       gin.Default(),
 		serverPort:   serverPort,
@@ -32,6 +32,8 @@ func (r *router) setup() *gin.Engine {
 	{
 		list.POST("/set", r.keyToStringMiddleware(), r.setListHandler)
 		list.GET("/get", r.getListHandler)
+		list.GET("/lrange", r.lRangeHandler)
+		list.POST("/lset", r.keyToStringMiddleware(), r.lSetHandler)
 	}
 
 	str := r.router.Group("/string")
@@ -44,14 +46,16 @@ func (r *router) setup() *gin.Engine {
 	{
 		hash.POST("/set", r.keyToStringMiddleware(), r.setHashHandler)
 		hash.GET("/get", r.getHashHandler)
+		hash.POST("/hset", r.keyToStringMiddleware(), r.hSetHandler)
+		hash.GET("/hget", r.hGetHandler)
 	}
 
 	r.router.GET("/keys", r.keysHandler)
 	r.router.POST("/del", r.keyToStringMiddleware(), r.deleteHandler)
 
-	r.router.POST("/login", r.LoginHadler)
-	r.router.POST("/signup", r.SignupHandler)
-	r.router.POST("/logout", r.AuthUserMiddleware(), r.LogoutHandler)
+	r.router.POST("/login", r.loginHadler)
+	r.router.POST("/signup", r.signupHandler)
+	r.router.POST("/logout", r.authUserMiddleware(), r.logoutHandler)
 
 	return r.router
 }

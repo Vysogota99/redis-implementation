@@ -11,7 +11,7 @@ import (
 type Server struct {
 	conf         *Config
 	router       *router
-	redis        *store.Redis
+	redis        store.RedisImpl
 	sessionStore sessions.Store
 }
 

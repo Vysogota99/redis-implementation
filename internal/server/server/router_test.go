@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSetlistHandler(t *testing.T) {
-	redis, _ := store.New("localhost:6379")
+func TestSetListHandler(t *testing.T) {
+	redis := store.NewMock()
 	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
@@ -37,14 +37,14 @@ func TestSetlistHandler(t *testing.T) {
 }
 
 func TestSetHashHandler(t *testing.T) {
-	redis, _ := store.New("localhost:6379")
+	redis := store.NewMock()
 	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
 
 	reqBody := models.SetHashRequest{
-		Key: "user:ivan",
+		Key: "user:1",
 		Value: map[string]interface{}{
 			"name": "Ivan",
 			"age":  21,
@@ -60,16 +60,14 @@ func TestSetHashHandler(t *testing.T) {
 }
 
 func TestSetStringHandler(t *testing.T) {
-	redis, err := store.New("localhost:6379")
-	assert.NoError(t, err)
-
+	redis := store.NewMock()
 	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
 
 	reqBody := models.SetStringRequest{
-		Key:   "user:ivan",
+		Key:   "user:1",
 		Value: "lapshin",
 	}
 
@@ -82,23 +80,21 @@ func TestSetStringHandler(t *testing.T) {
 }
 
 func TestGetHashHandler(t *testing.T) {
-	redis, err := store.New("localhost:6379")
-	assert.NoError(t, err)
+	redis := store.NewMock()
 
 	router := newRouter(":3000", "auth", redis, nil)
 
 	ts := httptest.NewServer(router.setup())
 	defer ts.Close()
 
-	key := "user:ivan"
-	resp, err := http.Get(fmt.Sprintf("%s/hash/get?key=%s", ts.URL, key))
+	key := "user:1"
+	resp, _ := http.Get(fmt.Sprintf("%s/hash/get?key=%s", ts.URL, key))
 	assert.Equal(t, 200, resp.StatusCode)
 	resp.Body.Close()
 }
 
 func TestGetListHandler(t *testing.T) {
-	redis, err := store.New("localhost:6379")
-	assert.NoError(t, err)
+	redis := store.NewMock()
 
 	router := newRouter(":3000", "auth", redis, nil)
 
@@ -106,14 +102,13 @@ func TestGetListHandler(t *testing.T) {
 	defer ts.Close()
 
 	key := "tresh"
-	resp, err := http.Get(fmt.Sprintf("%s/list/get?key=%s", ts.URL, key))
+	resp, _ := http.Get(fmt.Sprintf("%s/list/get?key=%s", ts.URL, key))
 	assert.Equal(t, 200, resp.StatusCode)
 	resp.Body.Close()
 }
 
 func TestSignUP(t *testing.T) {
-	redis, err := store.New("localhost:6379")
-	assert.NoError(t, err)
+	redis := store.NewMock()
 
 	router := newRouter(":3000", "auth", redis, nil)
 
@@ -121,7 +116,7 @@ func TestSignUP(t *testing.T) {
 	defer ts.Close()
 
 	reqBody := models.User{
-		Login:    "ivan",
+		Login:    "user:ivan2",
 		Password: "qwerty",
 	}
 
@@ -129,6 +124,153 @@ func TestSignUP(t *testing.T) {
 	assert.NoError(t, err)
 
 	resp, err := http.Post(fmt.Sprintf("%s/signup", ts.URL), "application/json", bytes.NewBuffer(data))
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestLoginHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	reqBody := models.User{
+		Login:    "Ivan",
+		Password: "lapshin",
+	}
+
+	data, err := json.Marshal(reqBody)
+	assert.NoError(t, err)
+
+	resp, err := http.Post(fmt.Sprintf("%s/login", ts.URL), "application/json", bytes.NewBuffer(data))
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestHGetHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	key := "user:1"
+	field := "name"
+
+	resp, _ := http.Get(fmt.Sprintf("%s/hash/hget?key=%s&&field=%s", ts.URL, key, field))
 	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestHSetHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	reqBody := models.SetHashRequest{
+		Key: "user:1",
+		Value: map[string]interface{}{
+			"role": "admin",
+		},
+	}
+
+	data, err := json.Marshal(reqBody)
+	assert.NoError(t, err)
+
+	resp, err := http.Post(fmt.Sprintf("%s/hash/hset", ts.URL), "application/json", bytes.NewBuffer(data))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestLRangeHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	key := "user:1"
+	start := "0"
+	stop := "1"
+
+	resp, _ := http.Get(fmt.Sprintf("%s/list/lrange?key=%s&&start=%s&&stop=%s", ts.URL, key, start, stop))
+	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestLSetHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	reqBody := map[string]interface{}{
+		"key":   "user:1",
+		"value": -1,
+		"index": 1,
+	}
+
+	data, err := json.Marshal(reqBody)
+	assert.NoError(t, err)
+
+	resp, err := http.Post(fmt.Sprintf("%s/list/lset", ts.URL), "application/json", bytes.NewBuffer(data))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestKeysHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	pattern := "*"
+	resp, _ := http.Get(fmt.Sprintf("%s/keys?pattern=%s", ts.URL, pattern))
+	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestGetStringHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	key := "user:1"
+	resp, _ := http.Get(fmt.Sprintf("%s/string/get?key=%s", ts.URL, key))
+	assert.Equal(t, 200, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func TestDeleteHandler(t *testing.T) {
+	redis := store.NewMock()
+
+	router := newRouter(":3000", "auth", redis, nil)
+
+	ts := httptest.NewServer(router.setup())
+	defer ts.Close()
+
+	reqBody := map[string]interface{}{
+		"key":   "user:1",
+	}
+
+	data, err := json.Marshal(reqBody)
+	assert.NoError(t, err)
+
+	resp, err := http.Post(fmt.Sprintf("%s/del", ts.URL), "application/json", bytes.NewBuffer(data))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	resp.Body.Close()
 }

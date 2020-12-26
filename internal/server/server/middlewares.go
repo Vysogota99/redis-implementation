@@ -25,13 +25,19 @@ func (r *router) keyToStringMiddleware() gin.HandlerFunc {
 
 			body, err := ioutil.ReadAll(ctx.Request.Body)
 			ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-
 			if err != nil {
 				ctx.AbortWithError(http.StatusInternalServerError, err)
+				return
 			}
 
 			if err := json.Unmarshal(body, rk); err != nil {
 				ctx.AbortWithError(http.StatusUnprocessableEntity, err)
+				return
+			}
+
+			if rk.Key == nil {
+				ctx.AbortWithError(http.StatusUnprocessableEntity, err)
+				return
 			}
 
 			var keyString string
@@ -44,6 +50,7 @@ func (r *router) keyToStringMiddleware() gin.HandlerFunc {
 				serializedData, err := json.Marshal(rk.Key)
 				if err != nil {
 					ctx.AbortWithError(http.StatusUnprocessableEntity, err)
+					return
 				}
 				keyString = string(serializedData)
 			default:
@@ -56,7 +63,7 @@ func (r *router) keyToStringMiddleware() gin.HandlerFunc {
 }
 
 // AuthUserMiddleware - ...
-func (r *router) AuthUserMiddleware() gin.HandlerFunc {
+func (r *router) authUserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, err := r.sessionStore.Get(c.Request, r.sessionName)
 		if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Vysogota99/redis-implementation/internal/server/models"
 	"github.com/gin-gonic/gin"
@@ -132,7 +133,7 @@ func (r *router) keysHandler(c *gin.Context) {
 		respond(c, http.StatusBadRequest, "", "No field pattern in get query")
 		return
 	}
-	result, err := r.redis.Getkeys(c, pattern)
+	result, err := r.redis.GetKeys(c, pattern)
 	if err != nil {
 		if err == redis.Nil {
 			respond(c, http.StatusNoContent, "", err.Error())
@@ -189,7 +190,7 @@ func (r *router) deleteHandler(c *gin.Context) {
 	respond(c, http.StatusOK, result, "")
 }
 
-func (r *router) LoginHadler(c *gin.Context) {
+func (r *router) loginHadler(c *gin.Context) {
 	req := models.User{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respond(c, http.StatusBadRequest, "", err.Error())
@@ -221,7 +222,7 @@ func (r *router) LoginHadler(c *gin.Context) {
 	respond(c, http.StatusCreated, req.Login, "")
 }
 
-func (r *router) SignupHandler(c *gin.Context) {
+func (r *router) signupHandler(c *gin.Context) {
 	req := models.User{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		respond(c, http.StatusBadRequest, "", err.Error())
@@ -238,7 +239,6 @@ func (r *router) SignupHandler(c *gin.Context) {
 	if len(user) != 0 {
 		respond(c, http.StatusBadRequest, "Пользователь с таким логином уже зарегистрирован", "")
 		return
-
 	}
 
 	userCreate := map[string]interface{}{
@@ -260,7 +260,7 @@ func (r *router) SignupHandler(c *gin.Context) {
 	respond(c, http.StatusCreated, userCreate, "")
 }
 
-func (r *router) LogoutHandler(c *gin.Context) {
+func (r *router) logoutHandler(c *gin.Context) {
 	session, err := r.sessionStore.Get(c.Request, r.sessionName)
 	if err != nil {
 		respond(c, http.StatusInternalServerError, "", err.Error())
@@ -274,6 +274,140 @@ func (r *router) LogoutHandler(c *gin.Context) {
 	}
 
 	respond(c, http.StatusOK, "loggedout", "")
+}
+
+func (r *router) hGetHandler(c *gin.Context) {
+	key := c.Query("key")
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", "No field key in get query")
+		return
+	}
+
+	field := c.Query("field")
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", "No field key in get query")
+		return
+	}
+
+	result, err := r.redis.HGet(context.Background(), key, field)
+	if err != nil {
+		if err == redis.Nil {
+			respond(c, http.StatusNoContent, "", err.Error())
+			return
+		}
+
+		respond(c, http.StatusInternalServerError, "", err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, result, "")
+}
+
+func (r *router) hSetHandler(c *gin.Context) {
+	keyChan, exists := c.Get("key")
+	if !exists {
+		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		return
+	}
+	key := <-keyChan.(chan string)
+
+	data := &models.SetHashRequest{}
+	if err := c.ShouldBindJSON(data); err != nil {
+		respond(c, http.StatusBadRequest, "", err.Error())
+		return
+	}
+
+	res, err := r.redis.HSet(c, key, data.Value)
+	if err != nil {
+		log.Println(err)
+		respond(c, http.StatusInternalServerError, "", err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, res, "")
+}
+
+func (r *router) lRangeHandler(c *gin.Context) {
+	key := c.Query("key")
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", "No field key in get query")
+		return
+	}
+
+	start := c.Query("start")
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", "No field start in get query")
+		return
+	}
+
+	stop := c.Query("stop")
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", "No field stop in get query")
+		return
+	}
+
+	startInt, err := strconv.ParseInt(start, 10, 64)
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", err.Error())
+		return
+	}
+
+	stopInt, err := strconv.ParseInt(stop, 10, 64)
+	if key == "" {
+		respond(c, http.StatusBadRequest, "", err.Error())
+		return
+	}
+
+	result, err := r.redis.LRange(context.Background(), key, startInt, stopInt)
+	if err != nil {
+		if err == redis.Nil {
+			respond(c, http.StatusNoContent, "", err.Error())
+			return
+		}
+
+		respond(c, http.StatusInternalServerError, "", err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, result, "")
+
+}
+
+func (r *router) lSetHandler(c *gin.Context) {
+	keyChan, exists := c.Get("key")
+	if !exists {
+		respond(c, http.StatusInternalServerError, "", "No key chan in context")
+		return
+	}
+	key := <-keyChan.(chan string)
+
+	type request struct {
+		key   string
+		Value interface{} `json:"value" binding:"required"`
+		Index int64       `json:"index"`
+	}
+
+	req := request{
+		key: key,
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respond(c, http.StatusBadRequest, "", err.Error())
+		return
+	}
+
+	result, err := r.redis.LSet(context.Background(), req.key, req.Index, req.Value)
+	if err != nil {
+		if err == redis.Nil {
+			respond(c, http.StatusNoContent, "", err.Error())
+			return
+		}
+
+		respond(c, http.StatusInternalServerError, "", err.Error())
+		return
+	}
+
+	respond(c, http.StatusOK, result, "")
 }
 
 func respond(c *gin.Context, code int, result interface{}, err string) {
