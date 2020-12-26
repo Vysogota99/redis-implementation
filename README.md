@@ -121,7 +121,6 @@
         <code>    
             {"error":"","result":"string"}
         </code>
-=
     <li>
         получить значение поля hash HGET
         <br>
@@ -140,11 +139,11 @@
         <br>
         <code>
         curl -X GET 127.0.0.1:3000/hash/get?key=user:Ivan  
-        <code>
+        </code>
         <br>
         результат
         <br>
-        </code>
+        <code>
         {"error":"","result":{"lastname":"Lapshin","login":"Ivan","password":"$2a$08$BN5DyPquIrPhAnTQNxtrEOAXxMZgPAzQdNYJydpgMXGuRBy6tRP76","role":"user"}}
         </code>
     </li>
@@ -182,3 +181,189 @@
         </code>
     </li>
 </ul>
+<h3>Api методы для клиента</h3>
+<ul>
+    <li>
+            ддобавить список
+        <br>
+        <code>
+        curl -X POST -d '{"method":"set", "payload": {"key": "client", "value":["1","2","3"], "ttl":10} }' http://127.0.0.1:3001/list
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+        {"error":"","result":{"error":"","result":"success"}}
+        </code>
+    </li>
+    <li>
+            получить список
+        <br>
+        <code>
+        curl -X POST -d '{"method":"get", "payload": {"key": "client"} }' http://127.0.0.1:3001/list
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+        {"error":"","result":{"error":"","result":["1","2","3"]}}
+        </code>
+    </li>
+    <li>
+            создать строку
+        <br>
+        <code>
+curl -X POST -d '{"method":"set", "payload": {"key": "client:2", "value":"string", "ttl":10} }' http://127.0.0.1:3001/string
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+{"error":"","result":{"error":"","result":"OK"}}
+        </code>
+    </li>
+    <li>
+            получить строку
+        <br>
+        <code>
+curl -X POST -d '{"method":"get", "payload": {"key": "client:2"} }' http://127.0.0.1:3001/string
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+{"error":"","result":{"error":"","result":"string"}}
+        </code>
+    </li>
+    <li>
+    создать hash
+    <br>
+    <code>
+            curl -X POST -d '{"method":"set", "payload": {"key": "client:3", "value":{"name": "Ivan", "age":10}, "ttl":10} }' http://127.0.0.1:3001/map
+    </code>
+    <br>
+            результат
+    <br>
+    <code>
+            {"error":"","result":{"error":"","result":"success"}}
+    </code>
+    </li>
+    <li>
+        получить hash
+        <br>
+        <code>
+curl -X POST -d '{"method":"get", "payload": {"key": "client:3"} }' http://127.0.0.1:3001/map
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+{"error":"","result":{"error":"","result":{"age":"10","name":"Ivan"}}}
+        </code>
+    </li>
+    <li>
+        удалить ключ
+        <br>
+        <code>
+curl -X POST -d '{"key": "client"}' http://127.0.0.1:3001/delete
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+{"error":"","result":{"error":"","result":1}}
+        </code>
+    </li>
+    <li>
+        получить список ключей
+        <br>
+        <code>
+curl -X GET http://127.0.0.1:3001/keys?pattern=*      
+        </code>
+        <br>
+            результат
+        <br>
+        <code>
+{"error":"","result":{"error":"","result":["Ivan","user:ivan","list:1","{\"name\":\"Ivan\",\"sex\":\"male\"}","user:Ivan","key","user:Ivan2","user:2","client:3","client:2","user:3"]}}
+        </code>
+    </li>
+</ul>
+<h3>
+Авторизация
+</h3>
+<ul>
+    <li>
+    Регистрация
+    <br>
+    <code>
+    http://127.0.0.1:3000/signup
+    </code>
+    <br>
+    Тело запроса
+    <pre>
+    {
+        "login": "Ivan",
+        "password": "asd"
+    }
+    </pre>
+    </li>
+    <li>
+    Авторизация
+    <br>
+    <code>
+    http://127.0.0.1:3000/login
+    </code>
+    <br>
+    Тело запроса
+    <pre>
+    {
+        "login": "Ivan",
+        "password": "asd"
+    }
+    </pre>
+    </li>
+        <li>
+    выход
+    <br>
+    <code>
+    http://127.0.0.1:3000/logout
+    </code>
+    </li>
+</ul>
+
+<h3>
+ Нагрузочное тестирование
+</h3>
+Чтобы начать тестирование необходимо зайти в папку /test и выполнить команду. Для описания флагов можно обратиться к Репозиторию с <a src="https://github.com/a696385/go-meter">модулем</a>
+<br>
+<code>
+go-meter -t 12 -c 400 -d 30s -u http://127.0.0.1:3000/hash/set -s hash_set.json -v -m POST
+</code>
+<br>
+результат
+<br>
+<pre>
+Stats:            Min       Avg       Max
+  Latency          0s      50ms     299ms
+  235931 requests in 30.001s, net: in 35MB, out 31MB
+HTTP Codes: 
+     200       100.00%
+Latency: 
+                0s         6.76%
+              10ms         3.20%
+              20ms         5.05%
+              30ms        13.20%
+              40ms        23.83%
+              50ms        21.30%
+              60ms        11.15%
+              70ms         5.78%
+              80ms         3.27%
+              90ms         2.23%
+             100ms         1.49%
+             110ms         1.01%
+     120ms - 290ms         1.71%
+Requests: 7864.10/sec
+Net In: 9.2MBit/sec
+Net Out: 8.2MBit/sec
+Transfer: 2.2MB/sec
+</pre>
