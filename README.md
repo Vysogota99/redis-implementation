@@ -331,6 +331,11 @@ curl -X GET http://127.0.0.1:3001/keys?pattern=*
 </h3>
 Чтобы начать тестирование необходимо зайти в папку /test и выполнить команду. Для описания флагов можно обратиться к Репозиторию с <a src="https://github.com/a696385/go-meter">модулем</a>
 <br>
+установка
+<br>
+<code>
+    $GOPATH/bin/go-meter -h 
+</code>
 <code>
 go-meter -t 12 -c 400 -d 30s -u http://127.0.0.1:3000/hash/set -s hash_set.json -v -m POST
 </code>
